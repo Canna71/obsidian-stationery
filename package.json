@@ -1,5 +1,5 @@
 {
-	"name": "obsidian-template",
+	"name": "obsidian-stationery",
 	"version": "1.0.0",
 	"description": "TODO:",
 	"main": "main.js",
@@ -28,6 +28,8 @@
 		"typescript": "4.7.4"
 	},
 	"dependencies": {
+		"jss": "^10.9.2",
+		"jss-plugin-expand": "^10.9.2",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0"
 	}

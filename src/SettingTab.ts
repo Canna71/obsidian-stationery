@@ -1,11 +1,11 @@
-import TemplatePlugin from "src/main";
+import StationeryPlugin from "src/main";
 import { App, PluginSettingTab, Setting } from "obsidian";
 
 
-export class TemplateSettingsTab extends PluginSettingTab {
-	plugin: TemplatePlugin;
+export class StationerySettingsTab extends PluginSettingTab {
+	plugin: StationeryPlugin;
 
-	constructor(app: App, plugin: TemplatePlugin) {
+	constructor(app: App, plugin: StationeryPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
@@ -15,15 +15,15 @@ export class TemplateSettingsTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl('h2', {text: 'Template Settings'});
+		containerEl.createEl('h2', {text: 'Stationery Settings'});
 
         this.createToggle(containerEl, "Add Ribbon Icon",
             "Adds an icon to the ribbon to launch scan",
             "addRibbonIcon"
         );
 
-        this.createToggle(containerEl, "Show Template Sidebar",
-        "Opens Template sidebar at startup",
+        this.createToggle(containerEl, "Show Stationery Sidebar",
+        "Opens Stationery sidebar at startup",
         "showAtStartUp"
     	);
 

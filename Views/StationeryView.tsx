@@ -6,16 +6,16 @@ import { createRoot, Root } from "react-dom/client";
 
 
 import { loadMathJax } from "obsidian";
-import { TemplateSettings } from "src/Settings";
-import { getTemplateSettings } from "src/main";
-export const TEMPLATE_VIEW = "Template-view";
+import { StationerySettings } from "src/Settings";
+import { getStationerySettings } from "src/main";
+export const STATIONERY_VIEW = "Stationery-view";
 
-export const TemplateContext = React.createContext<any>({});
+export const StationeryContext = React.createContext<any>({});
 
 
 
-export class TemplateView extends ItemView {
-    settings: TemplateSettings;
+export class StationeryView extends ItemView {
+    settings: StationerySettings;
     root: Root;
     state = {
 
@@ -25,8 +25,8 @@ export class TemplateView extends ItemView {
 
     constructor(leaf: WorkspaceLeaf) {
         super(leaf);
-        // this.settings = (this.app as any).plugins.plugins["obsidian-Template"].settings as TemplateSettings;
-        this.settings = getTemplateSettings();
+        // this.settings = (this.app as any).plugins.plugins["obsidian-Stationery"].settings as StationerySettings;
+        this.settings = getStationerySettings();
         this.state = {
 
         };
@@ -34,11 +34,11 @@ export class TemplateView extends ItemView {
     }
 
     getViewType() {
-        return TEMPLATE_VIEW;
+        return STATIONERY_VIEW;
     }
 
     getDisplayText() {
-        return "Template";
+        return "Stationery";
     }
 
     override onResize(): void {
@@ -57,12 +57,12 @@ export class TemplateView extends ItemView {
 
         this.root.render(
             <React.StrictMode>
-                <TemplateContext.Provider value={{
+                <StationeryContext.Provider value={{
                     width: this.contentEl.innerWidth,
                     settings: this.settings
                 }}>
                    <div>TODO:</div>
-                </TemplateContext.Provider>
+                </StationeryContext.Provider>
             </React.StrictMode>
         );
     }

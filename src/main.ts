@@ -1,9 +1,10 @@
-import { DEFAULT_SETTINGS, TemplateSettings } from "src/Settings";
+import { DEFAULT_SETTINGS, StationerySettings } from "src/Settings";
 import { addIcon, MarkdownView } from "obsidian";
-
+import jss from "jss";
+import pluginExpand from "jss-plugin-expand";
 // import { MathResult } from './Extensions/ResultMarkdownChild';
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { TemplateView, TEMPLATE_VIEW } from "../Views/TemplateView";
+import { StationeryView, STATIONERY_VIEW } from "../Views/StationeryView";
 import {
     App,
     finishRenderMath,
@@ -12,50 +13,55 @@ import {
     Plugin,
     WorkspaceLeaf,
 } from "obsidian";
-import { TemplateSettingsTab } from "src/SettingTab";
+import { StationerySettingsTab } from "src/SettingTab";
 
+const CONTENT_CLASS = "stationary-content";
 
 const sigma = `<path stroke="currentColor" fill="none" d="M78.6067 22.8905L78.6067 7.71171L17.8914 7.71171L48.2491 48.1886L17.8914 88.6654L78.6067 88.6654L78.6067 73.4866" opacity="1"  stroke-linecap="round" stroke-linejoin="round" stroke-width="6" />
 `;
 
 // Remember to rename these classes and interfaces!
 
-let gSettings: TemplateSettings;
+let gSettings: StationerySettings;
 
-export function getTemplateSettings() { return gSettings; }
-export default class TemplatePlugin extends Plugin {
-    settings: TemplateSettings;
- 
+export function getStationerySettings() {
+    return gSettings;
+}
+
+jss.setup({
+    plugins: [pluginExpand()],
+});
+export default class StationeryPlugin extends Plugin {
+    settings: StationerySettings;
+
     async onload() {
         await this.loadSettings();
 
-        this.registerView(TEMPLATE_VIEW, (leaf) => new TemplateView(leaf));
+        this.registerView(STATIONERY_VIEW, (leaf) => new StationeryView(leaf));
 
-        addIcon("sigma",sigma); 
-
+        addIcon("sigma", sigma);
 
         if (this.settings.addRibbonIcon) {
             // This creates an icon in the left ribbon.
             const ribbonIconEl = this.addRibbonIcon(
                 "sigma",
-                "Open Template",
+                "Open Stationery",
                 (evt: MouseEvent) => {
                     this.activateView();
                 }
             );
             // Perform additional things with the ribbon
-            ribbonIconEl.addClass("Template-ribbon-class");
+            ribbonIconEl.addClass("Stationery-ribbon-class");
         }
 
         this.addCommand({
-            id: "show-Template-view",
-            name: "Show Template Sidebar",
+            id: "show-Stationery-view",
+            name: "Show Stationery Sidebar",
             callback: () => this.activateView(),
-          });
-         
+        });
 
         this.app.workspace.onLayoutReady(() => {
-            if(this.settings.showAtStartup){
+            if (this.settings.showAtStartup) {
                 this.activateView();
             }
         });
@@ -64,18 +70,32 @@ export default class TemplatePlugin extends Plugin {
         this.registerPostProcessor();
         this.registerEditorExtensions();
 
+        this.app.workspace.on("file-open", (file) => {
+            console.log(file);
+            const mv = this.app.workspace.getActiveViewOfType(MarkdownView);
+            if (mv) {
+                this.applyStyles(mv);
+            }
+        });
+
+        this.app.workspace.on("window-open", (win, ctx) => {
+            console.log(win, ctx);
+        }); 
+
         this.app.workspace.on(
             "active-leaf-change",
             (leaf: WorkspaceLeaf | null) => {
-                // console.log("active-leaf-change", leaf);
                 if (leaf?.view instanceof MarkdownView) {
-                    // @ts-expect-error, not typed
-                    const editorView = leaf.view.editor.cm as EditorView;
-                    
+                    const contentEl = leaf.view.contentEl;
+                    // this.applyStyles(contentEl);
                 }
             },
             this
         );
+        //TODO: apply upon launch
+        this.app.workspace.on("layout-change", () => {
+            // console.log("layout changed");
+        });
 
         this.app.workspace.on(
             "codemirror",
@@ -85,11 +105,11 @@ export default class TemplatePlugin extends Plugin {
             this
         );
 
-        this.addSettingTab(new TemplateSettingsTab(this.app, this));
+        this.addSettingTab(new StationerySettingsTab(this.app, this));
     }
 
     onunload() {
-        this.app.workspace.detachLeavesOfType(TEMPLATE_VIEW);
+        this.app.workspace.detachLeavesOfType(STATIONERY_VIEW);
     }
 
     async loadSettings() {
@@ -106,18 +126,18 @@ export default class TemplatePlugin extends Plugin {
     }
 
     async activateView() {
-        this.app.workspace.detachLeavesOfType(TEMPLATE_VIEW);
+        this.app.workspace.detachLeavesOfType(STATIONERY_VIEW);
 
         await this.app.workspace.getRightLeaf(false).setViewState(
             {
-                type: TEMPLATE_VIEW,
+                type: STATIONERY_VIEW,
                 active: true,
             },
             { settings: this.settings }
         );
 
         this.app.workspace.revealLeaf(
-            this.app.workspace.getLeavesOfType(TEMPLATE_VIEW)[0]
+            this.app.workspace.getLeavesOfType(STATIONERY_VIEW)[0]
         );
     }
 
@@ -125,7 +145,7 @@ export default class TemplatePlugin extends Plugin {
         await loadMathJax();
         await finishRenderMath();
         this.registerMarkdownCodeBlockProcessor(
-            "Template",
+            "Stationery",
             (source, el, ctx) => {
                 // processCodeBlock(source, el, this.settings, ctx);
             }
@@ -140,6 +160,43 @@ export default class TemplatePlugin extends Plugin {
     }
 
     async registerEditorExtensions() {
-        // this.registerEditorExtension([resultField, TemplateConfigField]);
+        // this.registerEditorExtension([resultField, StationeryConfigField]);
+    }
+
+    applyStyles(mv: MarkdownView) {
+        // workspace-leaf mod-active
+        // parent us
+        // class="workspace-leaf-content" data-type="markdown" data-mode="source" style="/* background: pink; *//* padding: 20px; */"><div class="view-header"><div class="view-header-icon" draggable="tr
+
+        const contentEl = mv.contentEl;
+        const parent = contentEl.parentElement;
+
+        const style = {
+            content: {
+                background: {
+                    color: "#223344 !important",
+                },
+
+                margin: "20px",
+            },
+
+            parent: {
+                background: Math.random() > 0.5 ? "pink" : "green",
+            },
+        };
+        let sheet = (mv as any)._sheet;
+        if (sheet) {
+            contentEl.removeClasses([CONTENT_CLASS, sheet.classes.content]);
+            parent?.removeClasses([sheet.classes.parent]);
+            jss.removeStyleSheet((mv as any)._sheet);
+        }
+
+        console.log(contentEl);
+        console.log(style);
+        sheet = jss.createStyleSheet(style);
+        (mv as any)._sheet = sheet;
+        sheet.attach();
+        contentEl.addClasses([CONTENT_CLASS, sheet.classes.content]);
+        parent?.addClass(sheet.classes.parent);
     }
 }
