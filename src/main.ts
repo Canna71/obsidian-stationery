@@ -1,5 +1,5 @@
 import { DEFAULT_SETTINGS, StationerySettings } from "src/Settings";
-import { addIcon, MarkdownView } from "obsidian";
+import { addIcon, MarkdownView, normalizePath } from "obsidian";
 import jss from "jss";
 import pluginExpand from "jss-plugin-expand";
 // import { MathResult } from './Extensions/ResultMarkdownChild';
@@ -71,7 +71,6 @@ export default class StationeryPlugin extends Plugin {
         this.registerEditorExtensions();
 
         this.app.workspace.on("file-open", (file) => {
-            console.log(file);
             const mv = this.app.workspace.getActiveViewOfType(MarkdownView);
             if (mv) {
                 this.applyStyles(mv);
@@ -80,7 +79,7 @@ export default class StationeryPlugin extends Plugin {
 
         this.app.workspace.on("window-open", (win, ctx) => {
             console.log(win, ctx);
-        }); 
+        });
 
         this.app.workspace.on(
             "active-leaf-change",
@@ -96,14 +95,6 @@ export default class StationeryPlugin extends Plugin {
         this.app.workspace.on("layout-change", () => {
             // console.log("layout changed");
         });
-
-        this.app.workspace.on(
-            "codemirror",
-            (cm: CodeMirror.Editor) => {
-                console.log("codemirror", cm);
-            },
-            this
-        );
 
         this.addSettingTab(new StationerySettingsTab(this.app, this));
     }
@@ -170,33 +161,72 @@ export default class StationeryPlugin extends Plugin {
 
         const contentEl = mv.contentEl;
         const parent = contentEl.parentElement;
+        const file = mv.file;
 
-        const style = {
-            content: {
-                background: {
-                    color: "#223344 !important",
-                },
-
-                margin: "20px",
-            },
-
-            parent: {
-                background: Math.random() > 0.5 ? "pink" : "green",
-            },
-        };
         let sheet = (mv as any)._sheet;
         if (sheet) {
             contentEl.removeClasses([CONTENT_CLASS, sheet.classes.content]);
-            parent?.removeClasses([sheet.classes.parent]);
+            parent?.removeClasses([sheet.classes.frame]);
             jss.removeStyleSheet((mv as any)._sheet);
+        } 
+
+        const frontmatter =
+            this.app.metadataCache.getFileCache(file)?.frontmatter;
+        const st = frontmatter?.stationery;
+        if (!st) return;
+
+        const content: any = {
+            
+            background: {},
+        };
+        if (st.background?.color) {
+            content.background.color = `${st.background?.color} !important`;
+        }
+        if (st.background?.opacity) {
+            content.opacity = `${st.background?.opacity}`;
+        }
+        if (st.frame?.size) {
+            //TODO: support arrays
+            //and numeric
+            content.width = `calc(100% - 2*${st.frame?.size})`;
+            content.margin = `${st.frame?.size}`;
+        }
+        if(st.frame?.radius) {
+            content.border = {
+                radius: st.frame?.radius
+            }
         }
 
-        console.log(contentEl);
+        const frame: any = {
+            background: {},
+        };
+
+        if(st.frame?.image){
+            let imgUrl = st.frame?.image as string;
+            if(!imgUrl.toUpperCase().startsWith("HTTP")){
+                imgUrl=normalizePath(`img/`+imgUrl);
+            }
+            imgUrl = `url(${imgUrl})`
+            frame.background.image = imgUrl;
+        }
+        if(st.frame?.color){
+            frame.background.color = st.frame?.color;
+        }
+        
+
+        const style = {
+            content,
+
+            frame
+        };
+        
+
+        console.log(st);
         console.log(style);
         sheet = jss.createStyleSheet(style);
         (mv as any)._sheet = sheet;
         sheet.attach();
         contentEl.addClasses([CONTENT_CLASS, sheet.classes.content]);
-        parent?.addClass(sheet.classes.parent);
+        parent?.addClass(sheet.classes.frame);
     }
 }
