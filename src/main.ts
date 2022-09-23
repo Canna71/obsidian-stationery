@@ -144,11 +144,10 @@ export default class StationeryPlugin extends Plugin {
     }
 
     async registerPostProcessor() {
-        console.log("registerPostProcessor");
         // await loadMathJax();
         // await finishRenderMath();
         // this.registerMarkdownPostProcessor(getPostPrcessor(this.settings));
-    }
+    } 
 
     async registerEditorExtensions() {
         // this.registerEditorExtension([resultField, StationeryConfigField]);
@@ -195,7 +194,7 @@ export default class StationeryPlugin extends Plugin {
             content.border = {
                 radius: st.frame?.radius
             }
-        }
+        } 
 
         const frame: any = {
             background: {},
