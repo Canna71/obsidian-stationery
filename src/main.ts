@@ -50,7 +50,7 @@ export default class StationeryPlugin extends Plugin {
 
         addIcon("sigma", sigma);
 
-        if (this.settings.addRibbonIcon && false) {
+        if (this.settings.addRibbonIcon) {
             // This creates an icon in the left ribbon.
             const ribbonIconEl = this.addRibbonIcon(
                 "sigma",
