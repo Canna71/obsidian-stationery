@@ -1,5 +1,5 @@
 import { DEFAULT_SETTINGS, StationerySettings } from "src/Settings";
-import { addIcon, MarkdownView, normalizePath } from "obsidian";
+import { addIcon, MarkdownView } from "obsidian";
 import jss from "jss";
 import pluginExpand from "jss-plugin-expand";
 // import { MathResult } from './Extensions/ResultMarkdownChild';
@@ -14,6 +14,8 @@ import {
     WorkspaceLeaf,
 } from "obsidian";
 import { StationerySettingsTab } from "src/SettingTab";
+import path from "path";
+import fs from "fs/promises";
 
 const CONTENT_CLASS = "stationary-content";
 
@@ -33,9 +35,15 @@ jss.setup({
 });
 export default class StationeryPlugin extends Plugin {
     settings: StationerySettings;
+    basePath: string;
 
     async onload() {
         await this.loadSettings();
+
+        this.basePath = path.join(
+            (this.app.vault.adapter as any).getBasePath(),
+            this.manifest.dir || "");
+
 
         this.registerView(STATIONERY_VIEW, (leaf) => new StationeryView(leaf));
 
@@ -75,7 +83,8 @@ export default class StationeryPlugin extends Plugin {
             if (mv) {
                 this.applyStyles(mv);
             }
-        });
+        },
+        this);
 
         this.app.workspace.on("window-open", (win, ctx) => {
             console.log(win, ctx);
@@ -89,9 +98,9 @@ export default class StationeryPlugin extends Plugin {
                     // this.applyStyles(contentEl);
                 }
             },
-            this
+            this 
         );
-        //TODO: apply upon launch
+        
         this.app.workspace.on("layout-change", () => {
             // console.log("layout changed");
         });
@@ -153,7 +162,7 @@ export default class StationeryPlugin extends Plugin {
         // this.registerEditorExtension([resultField, StationeryConfigField]);
     }
 
-    applyStyles(mv: MarkdownView) {
+    async applyStyles(mv: MarkdownView) {
         // workspace-leaf mod-active
         // parent us
         // class="workspace-leaf-content" data-type="markdown" data-mode="source" style="/* background: pink; *//* padding: 20px; */"><div class="view-header"><div class="view-header-icon" draggable="tr
@@ -203,7 +212,14 @@ export default class StationeryPlugin extends Plugin {
         if(st.frame?.image){
             let imgUrl = st.frame?.image as string;
             if(!imgUrl.toUpperCase().startsWith("HTTP")){
-                imgUrl=normalizePath(`img/`+imgUrl);
+                try {
+                    const imagePath = path.join(this.basePath, imgUrl);
+                    const image = await fs.readFile(imagePath, {encoding: 'base64'});
+                    imgUrl = "data:image/jpeg;base64,"+image;
+                } catch(ex){
+                    console.warn(ex);
+                }
+
             }
             imgUrl = `url(${imgUrl})`
             frame.background.image = imgUrl;
@@ -211,15 +227,16 @@ export default class StationeryPlugin extends Plugin {
         if(st.frame?.color){
             frame.background.color = st.frame?.color;
         }
+
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
         
-
-        const style = {
+        
+        console.log(2);
+        const style = { 
             content,
-
             frame
         };
         
-
         console.log(st);
         console.log(style);
         sheet = jss.createStyleSheet(style);
