@@ -7,7 +7,7 @@ export interface StationerySettings {
 
 export const DEFAULT_SETTINGS: StationerySettings = {
     addRibbonIcon: true,
-    showAtStartup: true,
+    showAtStartup: false,
   
 }
 

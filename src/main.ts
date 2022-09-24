@@ -16,6 +16,7 @@ import {
 import { StationerySettingsTab } from "src/SettingTab";
 import path from "path";
 import fs from "fs/promises";
+import { Console } from "console";
 
 const CONTENT_CLASS = "stationary-content";
 
@@ -39,7 +40,7 @@ export default class StationeryPlugin extends Plugin {
 
     async onload() {
         await this.loadSettings();
-
+        console.log("Loading Stationery ")
         this.basePath = path.join(
             (this.app.vault.adapter as any).getBasePath(),
             this.manifest.dir || "");
@@ -49,7 +50,7 @@ export default class StationeryPlugin extends Plugin {
 
         addIcon("sigma", sigma);
 
-        if (this.settings.addRibbonIcon) {
+        if (this.settings.addRibbonIcon && false) {
             // This creates an icon in the left ribbon.
             const ribbonIconEl = this.addRibbonIcon(
                 "sigma",
@@ -67,6 +68,15 @@ export default class StationeryPlugin extends Plugin {
             name: "Show Stationery Sidebar",
             callback: () => this.activateView(),
         });
+
+        this.addCommand({
+            id:"apply-stationeru",
+            name: "Refresh Styles",
+            callback: ()=>{
+                const leaves = this.app.workspace.getLeavesOfType("markdown");
+                leaves.forEach(leaf => this.applyStyles(leaf.view as MarkdownView));          
+            }
+        })
 
         this.app.workspace.onLayoutReady(() => {
             if (this.settings.showAtStartup) {
@@ -94,8 +104,7 @@ export default class StationeryPlugin extends Plugin {
             "active-leaf-change",
             (leaf: WorkspaceLeaf | null) => {
                 if (leaf?.view instanceof MarkdownView) {
-                    const contentEl = leaf.view.contentEl;
-                    // this.applyStyles(contentEl);
+                    // this.applyStyles(leaf.view);
                 }
             },
             this 
@@ -105,7 +114,12 @@ export default class StationeryPlugin extends Plugin {
             // console.log("layout changed");
         });
 
-        this.addSettingTab(new StationerySettingsTab(this.app, this));
+        this.app.workspace.onLayoutReady(()=>{
+            const leaves = this.app.workspace.getLeavesOfType("markdown");
+            leaves.forEach(leaf => this.applyStyles(leaf.view as MarkdownView));
+        })
+
+        // this.addSettingTab(new StationerySettingsTab(this.app, this));
     }
 
     onunload() {
@@ -205,23 +219,21 @@ export default class StationeryPlugin extends Plugin {
             }
         } 
 
+        if(st.preset === "lined"){
+            content.background = "repeating-linear-gradient(transparent, transparent 23px, var(--background-modifier-border) 23px, var(--background-modifier-border) 24px)"
+        }
+        if(st.preset === "squared"){
+            content.background.size = "24px 24px"
+            content.background.image = `linear-gradient(to right, var(--background-modifier-border) 1px, transparent 1px)
+            ,linear-gradient(to bottom, var(--background-modifier-border) 1px, transparent 1px)
+            `
+        }
         const frame: any = {
             background: {},
         };
 
         if(st.frame?.image){
-            let imgUrl = st.frame?.image as string;
-            if(!imgUrl.toUpperCase().startsWith("HTTP")){
-                try {
-                    const imagePath = path.join(this.basePath, imgUrl);
-                    const image = await fs.readFile(imagePath, {encoding: 'base64'});
-                    imgUrl = "data:image/jpeg;base64,"+image;
-                } catch(ex){
-                    console.warn(ex);
-                }
-
-            }
-            imgUrl = `url(${imgUrl})`
+            const imgUrl = await this.processImage(st.frame?.image);
             frame.background.image = imgUrl;
         }
         if(st.frame?.color){
@@ -231,18 +243,34 @@ export default class StationeryPlugin extends Plugin {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         
         
-        console.log(2);
         const style = { 
             content,
             frame
         };
         
-        console.log(st);
-        console.log(style);
+
         sheet = jss.createStyleSheet(style);
         (mv as any)._sheet = sheet;
         sheet.attach();
         contentEl.addClasses([CONTENT_CLASS, sheet.classes.content]);
         parent?.addClass(sheet.classes.frame);
+    }
+
+    private async processImage(imgUrl: string) {
+        if(!imgUrl.toUpperCase){
+            console.log(imgUrl); 
+        }
+        if (!imgUrl.toUpperCase().startsWith("HTTP")) {
+            try {
+                const imagePath = path.join(this.basePath, imgUrl);
+                const image = await fs.readFile(imagePath, { encoding: 'base64' });
+                imgUrl = "data:image/jpeg;base64," + image;
+            } catch (ex) {
+                console.warn(ex);
+            }
+
+        }
+        imgUrl = `url(${imgUrl})`;
+        return imgUrl;
     }
 }
