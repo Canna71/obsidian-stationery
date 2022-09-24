@@ -3,7 +3,7 @@
 	"name": "stationery",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "TODO:",
+	"description": "Custom styles for notes",
 	"author": "Gabriele Cannata",
 	"authorUrl": "https://github.com/Canna71",
 	"isDesktopOnly": false

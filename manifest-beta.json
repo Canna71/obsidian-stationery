@@ -1,9 +1,9 @@
 {
 	"id": "obsidian-stationery",
 	"name": "stationery",
-	"version": "0.5.7",
+	"version": "0.8.0",
 	"minAppVersion": "0.15.0",
-	"description": "Computer Algebra System for Onsidian",
+	"description": "Custom styles for notes",
 	"author": "Gabriele Cannata",
 	"authorUrl": "https://github.com/Canna71",
 	"isDesktopOnly": true

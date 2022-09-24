@@ -1,7 +1,7 @@
 {
 	"name": "obsidian-stationery",
 	"version": "1.0.0",
-	"description": "TODO:",
+	"description": "Custom styles for notes",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
