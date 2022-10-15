@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import { debounce, finishRenderMath, ItemView,  WorkspaceLeaf } from "obsidian";
+import { ColorComponent, debounce, finishRenderMath, ItemView,  Setting,  WorkspaceLeaf } from "obsidian";
 import * as React from "react";
 import { createRoot, Root } from "react-dom/client";
 
@@ -8,6 +8,8 @@ import { createRoot, Root } from "react-dom/client";
 import { loadMathJax } from "obsidian";
 import { StationerySettings } from "src/Settings";
 import { getStationerySettings } from "src/main";
+import { useEffect, useRef } from "react";
+import ColorPicker from "./ColorPicker";
 export const STATIONERY_VIEW = "Stationery-view";
 
 export const StationeryContext = React.createContext<any>({});
@@ -61,7 +63,7 @@ export class StationeryView extends ItemView {
                     width: this.contentEl.innerWidth,
                     settings: this.settings
                 }}>
-                   <div>TODO:</div>
+                   <StationeryComponent settings={this.settings} />
                 </StationeryContext.Provider>
             </React.StrictMode>
         );
@@ -89,4 +91,19 @@ export class StationeryView extends ItemView {
 
         this.root.unmount();
     }
+}
+
+type StationeryComponentProps = {
+    settings: StationerySettings
+}
+
+const StationeryComponent = ({settings}:StationeryComponentProps) => {
+
+   
+
+    return <div>
+        <div>Background Color:
+            <ColorPicker color="red" />
+        </div>
+    </div>
 }

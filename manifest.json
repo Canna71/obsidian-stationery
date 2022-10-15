@@ -1,7 +1,7 @@
 {
 	"id": "obsidian-stationery",
 	"name": "stationery",
-	"version": "1.0.0",
+	"version": "0.4.0",
 	"minAppVersion": "0.15.0",
 	"description": "Custom styles for notes",
 	"author": "Gabriele Cannata",

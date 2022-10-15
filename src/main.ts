@@ -4,7 +4,7 @@ import jss from "jss";
 import pluginExpand from "jss-plugin-expand";
 // import { MathResult } from './Extensions/ResultMarkdownChild';
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { StationeryView, STATIONERY_VIEW } from "../Views/StationeryView";
+import { StationeryView, STATIONERY_VIEW } from "./Views/StationeryView";
 import {
     App,
     finishRenderMath,
@@ -37,14 +37,15 @@ jss.setup({
 export default class StationeryPlugin extends Plugin {
     settings: StationerySettings;
     basePath: string;
+    ribbonIconEl: HTMLElement | null;
 
     async onload() {
         await this.loadSettings();
-        console.log("Loading Stationery ")
+        console.log("Loading Stationery ");
         this.basePath = path.join(
             (this.app.vault.adapter as any).getBasePath(),
-            this.manifest.dir || "");
-
+            this.manifest.dir || ""
+        );
 
         this.registerView(STATIONERY_VIEW, (leaf) => new StationeryView(leaf));
 
@@ -52,15 +53,7 @@ export default class StationeryPlugin extends Plugin {
 
         if (this.settings.addRibbonIcon) {
             // This creates an icon in the left ribbon.
-            const ribbonIconEl = this.addRibbonIcon(
-                "sigma",
-                "Open Stationery",
-                (evt: MouseEvent) => {
-                    this.activateView();
-                }
-            );
-            // Perform additional things with the ribbon
-            ribbonIconEl.addClass("Stationery-ribbon-class");
+            this.addIcon();
         }
 
         this.addCommand({
@@ -70,13 +63,15 @@ export default class StationeryPlugin extends Plugin {
         });
 
         this.addCommand({
-            id:"apply-stationeru",
+            id: "apply-stationeru",
             name: "Refresh Styles",
-            callback: ()=>{
+            callback: () => {
                 const leaves = this.app.workspace.getLeavesOfType("markdown");
-                leaves.forEach(leaf => this.applyStyles(leaf.view as MarkdownView));          
-            }
-        })
+                leaves.forEach((leaf) =>
+                    this.applyStyles(leaf.view as MarkdownView)
+                );
+            },
+        });
 
         this.app.workspace.onLayoutReady(() => {
             if (this.settings.showAtStartup) {
@@ -88,13 +83,16 @@ export default class StationeryPlugin extends Plugin {
         this.registerPostProcessor();
         this.registerEditorExtensions();
 
-        this.app.workspace.on("file-open", (file) => {
-            const mv = this.app.workspace.getActiveViewOfType(MarkdownView);
-            if (mv) {
-                this.applyStyles(mv);
-            }
-        },
-        this);
+        this.app.workspace.on(
+            "file-open",
+            (file) => {
+                const mv = this.app.workspace.getActiveViewOfType(MarkdownView);
+                if (mv) {
+                    this.applyStyles(mv);
+                }
+            },
+            this
+        );
 
         this.app.workspace.on("window-open", (win, ctx) => {
             console.log(win, ctx);
@@ -107,23 +105,45 @@ export default class StationeryPlugin extends Plugin {
                     // this.applyStyles(leaf.view);
                 }
             },
-            this 
+            this
         );
-        
+
         this.app.workspace.on("layout-change", () => {
             // console.log("layout changed");
         });
 
-        this.app.workspace.onLayoutReady(()=>{
+        this.app.workspace.onLayoutReady(() => {
             const leaves = this.app.workspace.getLeavesOfType("markdown");
-            leaves.forEach(leaf => this.applyStyles(leaf.view as MarkdownView));
-        })
+            leaves.forEach((leaf) =>
+                this.applyStyles(leaf.view as MarkdownView)
+            );
+        });
 
         // this.addSettingTab(new StationerySettingsTab(this.app, this));
     }
 
+    addIcon() {
+        this.removeIcon();
+        this.ribbonIconEl = this.addRibbonIcon(
+            "sigma",
+            "Open Stationery",
+            (evt: MouseEvent) => {
+                this.activateView();
+            }
+        );
+        // Perform additional things with the ribbon
+        this.ribbonIconEl.addClass("Stationery-ribbon-class");
+    }
+
+    removeIcon() {
+        if (this.ribbonIconEl) {
+            this.ribbonIconEl.remove();
+            this.ribbonIconEl = null;
+        }
+    }
+
     onunload() {
-        this.app.workspace.detachLeavesOfType(STATIONERY_VIEW);
+        // this.app.workspace.detachLeavesOfType(STATIONERY_VIEW);
     }
 
     async loadSettings() {
@@ -140,19 +160,22 @@ export default class StationeryPlugin extends Plugin {
     }
 
     async activateView() {
-        this.app.workspace.detachLeavesOfType(STATIONERY_VIEW);
+        // this.app.workspace.detachLeavesOfType(STATIONERY_VIEW);
 
-        await this.app.workspace.getRightLeaf(false).setViewState(
-            {
-                type: STATIONERY_VIEW,
-                active: true,
-            },
-            { settings: this.settings }
-        );
+        let leaf = this.app.workspace.getLeavesOfType(STATIONERY_VIEW)[0];
 
-        this.app.workspace.revealLeaf(
-            this.app.workspace.getLeavesOfType(STATIONERY_VIEW)[0]
-        );
+        if (!leaf) {
+            await this.app.workspace.getRightLeaf(false).setViewState(
+                {
+                    type: STATIONERY_VIEW,
+                    active: true,
+                },
+                { settings: this.settings }
+            );
+            leaf = this.app.workspace.getLeavesOfType(STATIONERY_VIEW)[0];
+        }
+
+        leaf && this.app.workspace.revealLeaf(leaf);
     }
 
     async registerCodeBlock() {
@@ -170,7 +193,7 @@ export default class StationeryPlugin extends Plugin {
         // await loadMathJax();
         // await finishRenderMath();
         // this.registerMarkdownPostProcessor(getPostPrcessor(this.settings));
-    } 
+    }
 
     async registerEditorExtensions() {
         // this.registerEditorExtension([resultField, StationeryConfigField]);
@@ -190,7 +213,7 @@ export default class StationeryPlugin extends Plugin {
             contentEl.removeClasses([CONTENT_CLASS, sheet.classes.content]);
             parent?.removeClasses([sheet.classes.frame]);
             jss.removeStyleSheet((mv as any)._sheet);
-        } 
+        }
 
         const frontmatter =
             this.app.metadataCache.getFileCache(file)?.frontmatter;
@@ -198,7 +221,6 @@ export default class StationeryPlugin extends Plugin {
         if (!st) return;
 
         const content: any = {
-            
             background: {},
         };
         if (st.background?.color) {
@@ -213,41 +235,40 @@ export default class StationeryPlugin extends Plugin {
             content.width = `calc(100% - 2*${st.frame?.size})`;
             content.margin = `${st.frame?.size}`;
         }
-        if(st.frame?.radius) {
+        if (st.frame?.radius) {
             content.border = {
-                radius: st.frame?.radius
-            }
-        } 
-
-        if(st.preset === "lined"){
-            content.background = "repeating-linear-gradient(transparent, transparent 23px, var(--background-modifier-border) 23px, var(--background-modifier-border) 24px)"
+                radius: st.frame?.radius,
+            };
         }
-        if(st.preset === "squared"){
-            content.background.size = "24px 24px"
+
+        if (st.preset === "lined") {
+            content.background =
+                "repeating-linear-gradient(transparent, transparent 23px, var(--background-modifier-border) 23px, var(--background-modifier-border) 24px)";
+        }
+        if (st.preset === "squared") {
+            content.background.size = "24px 24px";
             content.background.image = `linear-gradient(to right, var(--background-modifier-border) 1px, transparent 1px)
             ,linear-gradient(to bottom, var(--background-modifier-border) 1px, transparent 1px)
-            `
+            `;
         }
         const frame: any = {
             background: {},
         };
 
-        if(st.frame?.image){
+        if (st.frame?.image) {
             const imgUrl = await this.processImage(st.frame?.image);
             frame.background.image = imgUrl;
         }
-        if(st.frame?.color){
+        if (st.frame?.color) {
             frame.background.color = st.frame?.color;
         }
 
         // eslint-disable-next-line @typescript-eslint/no-var-requires
-        
-        
-        const style = { 
+
+        const style = {
             content,
-            frame
+            frame,
         };
-        
 
         sheet = jss.createStyleSheet(style);
         (mv as any)._sheet = sheet;
@@ -257,18 +278,19 @@ export default class StationeryPlugin extends Plugin {
     }
 
     private async processImage(imgUrl: string) {
-        if(!imgUrl.toUpperCase){
-            console.log(imgUrl); 
+        if (!imgUrl.toUpperCase) {
+            console.log(imgUrl);
         }
         if (!imgUrl.toUpperCase().startsWith("HTTP")) {
             try {
                 const imagePath = path.join(this.basePath, imgUrl);
-                const image = await fs.readFile(imagePath, { encoding: 'base64' });
+                const image = await fs.readFile(imagePath, {
+                    encoding: "base64",
+                });
                 imgUrl = "data:image/jpeg;base64," + image;
             } catch (ex) {
                 console.warn(ex);
             }
-
         }
         imgUrl = `url(${imgUrl})`;
         return imgUrl;
