@@ -1,0 +1,17 @@
+.stationery-toolbox {
+
+    .stationery-toolbox-item {
+        display: flex;
+        align-content: center;
+        justify-content: flex-start;
+        align-items: center;
+
+        .stationery-toolbox-label {
+            margin-right: auto;
+
+            .stationery-toolbox-checkbox {
+                vertical-align: text-bottom;
+            }
+        }
+    }
+}

@@ -81,21 +81,27 @@ export class StyleProcessor {
     }
 
     private applyStyleInternal( mv: MarkdownView, style: { content: any; frame: any; }) {
+        this.removeStyle(mv);
         const sheet = jss.createStyleSheet(style);
-        (mv as any)._sheet = sheet;
+        // (mv as any)._sheets = sheet;
+        (mv as any)._sheets = (mv as any)._sheets || [];
+        (mv as any)._sheets.push(sheet);
         sheet.attach();
         mv.contentEl.addClasses([CONTENT_CLASS, sheet.classes.content]);
         mv.contentEl.parentElement?.addClass(sheet.classes.frame);
     }
 
     private removeStyle(mv: MarkdownView) {
-        const sheet = (mv as any)._sheet;
-        if (sheet) {
-            mv.contentEl.removeClasses([CONTENT_CLASS, sheet.classes.content]);
-            mv.contentEl.parentElement?.removeClasses([sheet.classes.frame]);
-            jss.removeStyleSheet((mv as any)._sheet);
+        const sheets = (mv as any)._sheets as any;
+        if (sheets) { 
+            sheets.forEach((sheet:any)=>{
+                mv.contentEl.removeClasses([CONTENT_CLASS, sheet.classes.content]);
+                mv.contentEl.parentElement?.removeClasses([sheet.classes.frame]);
+                jss.removeStyleSheet(sheet);
+            });
+            (mv as any)._sheets = undefined;  
         }
-        return sheet;
+        
     }
 
     private async extractStyleFromMetadata(st: StationeryMetadata) : Promise<StationeryStyle> {
