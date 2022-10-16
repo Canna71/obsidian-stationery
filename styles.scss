@@ -5,6 +5,7 @@
         align-content: center;
         justify-content: flex-start;
         align-items: center;
+        height: 48px;
 
         .stationery-toolbox-label {
             margin-right: auto;
@@ -12,6 +13,13 @@
             .stationery-toolbox-checkbox {
                 vertical-align: text-bottom;
             }
+
+
+        }
+
+        .stationery-toolbox-value {
+            min-width: 4em;
+            text-align: end;
         }
     }
 }

@@ -13,6 +13,7 @@ const ColorPicker = ({ color, onChange, disabled=false }: ColorPickerProps) => {
     const el = useRef<HTMLElement>(null);
     useEffect(() => {
         if (el.current) {
+            if (el.current?.firstChild) el.current.removeChild(el.current.firstChild)
             new ColorComponent(el.current)
                 .setValue(color)
                 .onChange((value: string) => {
@@ -23,7 +24,7 @@ const ColorPicker = ({ color, onChange, disabled=false }: ColorPickerProps) => {
                 ;
         }
         return () => { if (el.current?.firstChild) el.current.removeChild(el.current.firstChild) }
-    }, [])
+    }, [color, disabled, onChange])
 
     return <span className="stationery-toolboc-color" ref={el} ></span>
 
