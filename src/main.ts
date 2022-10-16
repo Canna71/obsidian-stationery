@@ -1,7 +1,5 @@
 import { DEFAULT_SETTINGS, StationerySettings } from "src/Settings";
 import { addIcon, MarkdownView } from "obsidian";
-import jss from "jss";
-import pluginExpand from "jss-plugin-expand";
 // import { MathResult } from './Extensions/ResultMarkdownChild';
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { StationeryView, STATIONERY_VIEW } from "./Views/StationeryView";
@@ -13,12 +11,11 @@ import {
     Plugin,
     WorkspaceLeaf,
 } from "obsidian";
-import { StationerySettingsTab } from "src/SettingTab";
 import path from "path";
-import fs from "fs/promises";
-import { Console } from "console";
 
-const CONTENT_CLASS = "stationary-content";
+import { StationerySettingsTab } from "src/SettingTab";
+import { StationeryMetadata, StyleProcessor } from "./styling";
+
 
 const sigma = `<path stroke="currentColor" fill="none" d="M78.6067 22.8905L78.6067 7.71171L17.8914 7.71171L48.2491 48.1886L17.8914 88.6654L78.6067 88.6654L78.6067 73.4866" opacity="1"  stroke-linecap="round" stroke-linejoin="round" stroke-width="6" />
 `;
@@ -31,23 +28,24 @@ export function getStationerySettings() {
     return gSettings;
 }
 
-jss.setup({
-    plugins: [pluginExpand()],
-});
+
 export default class StationeryPlugin extends Plugin {
     settings: StationerySettings;
-    basePath: string;
+    // basePath: string;
     ribbonIconEl: HTMLElement | null;
+    private _styleProcessor: StyleProcessor;
+    public get styleProcessor(): StyleProcessor {
+        return this._styleProcessor;
+    }
+   
 
     async onload() {
         await this.loadSettings();
         console.log("Loading Stationery ");
-        this.basePath = path.join(
-            (this.app.vault.adapter as any).getBasePath(),
-            this.manifest.dir || ""
-        );
+        
+        this._styleProcessor = new StyleProcessor(this);
 
-        this.registerView(STATIONERY_VIEW, (leaf) => new StationeryView(leaf));
+        this.registerView(STATIONERY_VIEW, (leaf) => new StationeryView(leaf, this));
 
         addIcon("sigma", sigma);
 
@@ -68,7 +66,7 @@ export default class StationeryPlugin extends Plugin {
             callback: () => {
                 const leaves = this.app.workspace.getLeavesOfType("markdown");
                 leaves.forEach((leaf) =>
-                    this.applyStyles(leaf.view as MarkdownView)
+                    this.styleProcessor.applyStyle(leaf.view as MarkdownView)
                 );
             },
         });
@@ -88,7 +86,7 @@ export default class StationeryPlugin extends Plugin {
             (file) => {
                 const mv = this.app.workspace.getActiveViewOfType(MarkdownView);
                 if (mv) {
-                    this.applyStyles(mv);
+                    this.styleProcessor.applyStyle(mv);
                 }
             },
             this
@@ -115,7 +113,7 @@ export default class StationeryPlugin extends Plugin {
         this.app.workspace.onLayoutReady(() => {
             const leaves = this.app.workspace.getLeavesOfType("markdown");
             leaves.forEach((leaf) =>
-                this.applyStyles(leaf.view as MarkdownView)
+                this.styleProcessor.applyStyle(leaf.view as MarkdownView)
             );
         });
 
@@ -199,100 +197,8 @@ export default class StationeryPlugin extends Plugin {
         // this.registerEditorExtension([resultField, StationeryConfigField]);
     }
 
-    async applyStyles(mv: MarkdownView) {
-        // workspace-leaf mod-active
-        // parent us
-        // class="workspace-leaf-content" data-type="markdown" data-mode="source" style="/* background: pink; *//* padding: 20px; */"><div class="view-header"><div class="view-header-icon" draggable="tr
+    
 
-        const contentEl = mv.contentEl;
-        const parent = contentEl.parentElement;
-        const file = mv.file;
-
-        let sheet = (mv as any)._sheet;
-        if (sheet) {
-            contentEl.removeClasses([CONTENT_CLASS, sheet.classes.content]);
-            parent?.removeClasses([sheet.classes.frame]);
-            jss.removeStyleSheet((mv as any)._sheet);
-        }
-
-        const frontmatter =
-            this.app.metadataCache.getFileCache(file)?.frontmatter;
-        const st = frontmatter?.stationery;
-        if (!st) return;
-
-        const content: any = {
-            background: {},
-        };
-        if (st.background?.color) {
-            content.background.color = `${st.background?.color} !important`;
-        }
-        if (st.background?.opacity) {
-            content.opacity = `${st.background?.opacity}`;
-        }
-        if (st.frame?.size) {
-            //TODO: support arrays
-            //and numeric
-            content.width = `calc(100% - 2*${st.frame?.size})`;
-            content.margin = `${st.frame?.size}`;
-        }
-        if (st.frame?.radius) {
-            content.border = {
-                radius: st.frame?.radius,
-            };
-        }
-
-        if (st.preset === "lined") {
-            content.background =
-                "repeating-linear-gradient(transparent, transparent 23px, var(--background-modifier-border) 23px, var(--background-modifier-border) 24px)";
-        }
-        if (st.preset === "squared") {
-            content.background.size = "24px 24px";
-            content.background.image = `linear-gradient(to right, var(--background-modifier-border) 1px, transparent 1px)
-            ,linear-gradient(to bottom, var(--background-modifier-border) 1px, transparent 1px)
-            `;
-        }
-        const frame: any = {
-            background: {},
-        };
-
-        if (st.frame?.image) {
-            const imgUrl = await this.processImage(st.frame?.image);
-            frame.background.image = imgUrl;
-        }
-        if (st.frame?.color) {
-            frame.background.color = st.frame?.color;
-        }
-
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-
-        const style = {
-            content,
-            frame,
-        };
-
-        sheet = jss.createStyleSheet(style);
-        (mv as any)._sheet = sheet;
-        sheet.attach();
-        contentEl.addClasses([CONTENT_CLASS, sheet.classes.content]);
-        parent?.addClass(sheet.classes.frame);
-    }
-
-    private async processImage(imgUrl: string) {
-        if (!imgUrl.toUpperCase) {
-            console.log(imgUrl);
-        }
-        if (!imgUrl.toUpperCase().startsWith("HTTP")) {
-            try {
-                const imagePath = path.join(this.basePath, imgUrl);
-                const image = await fs.readFile(imagePath, {
-                    encoding: "base64",
-                });
-                imgUrl = "data:image/jpeg;base64," + image;
-            } catch (ex) {
-                console.warn(ex);
-            }
-        }
-        imgUrl = `url(${imgUrl})`;
-        return imgUrl;
-    }
+    
 }
+

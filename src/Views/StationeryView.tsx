@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import { ColorComponent, debounce, finishRenderMath, ItemView,  Setting,  WorkspaceLeaf } from "obsidian";
+import { debounce, ItemView, MarkdownView, WorkspaceLeaf } from "obsidian";
 import * as React from "react";
 import { createRoot, Root } from "react-dom/client";
 
 
 
-import { loadMathJax } from "obsidian";
 import { StationerySettings } from "src/Settings";
-import { getStationerySettings } from "src/main";
-import { useEffect, useRef } from "react";
+import StationeryPlugin from "src/main";
 import ColorPicker from "./ColorPicker";
+import { useCallback, useState } from "react";
+import { StationeryMetadata } from "src/styling";
 export const STATIONERY_VIEW = "Stationery-view";
 
 export const StationeryContext = React.createContext<any>({});
@@ -17,22 +17,24 @@ export const StationeryContext = React.createContext<any>({});
 
 
 export class StationeryView extends ItemView {
-    settings: StationerySettings;
+    // settings: StationerySettings;
     root: Root;
     state = {
 
     };
+    plugin: StationeryPlugin;
 
 
 
-    constructor(leaf: WorkspaceLeaf) {
+    constructor(leaf: WorkspaceLeaf, plugin: StationeryPlugin) {
         super(leaf);
-        // this.settings = (this.app as any).plugins.plugins["obsidian-Stationery"].settings as StationerySettings;
-        this.settings = getStationerySettings();
+        this.plugin = plugin;
+        // this.settings = getStationerySettings();
         this.state = {
 
         };
         this.icon = "sigma";
+        this.onMetadataChanged = this.onMetadataChanged.bind(this);
     }
 
     getViewType() {
@@ -53,7 +55,19 @@ export class StationeryView extends ItemView {
     }, 300);
 
 
+    onMetadataChanged(md:StationeryMetadata) {
 
+        // const mv = this.app.workspace.getActiveViewOfType(MarkdownView);
+        // console.log(mv);
+        const leaves = this.app.workspace.getLeavesOfType("markdown");
+        leaves.forEach(leaf=>{
+            const mv = leaf.view as MarkdownView;
+            if (mv) {
+                this.plugin.styleProcessor.applyStyle(mv, md);
+            }
+        })
+        
+    }
 
     render() {
 
@@ -61,9 +75,9 @@ export class StationeryView extends ItemView {
             <React.StrictMode>
                 <StationeryContext.Provider value={{
                     width: this.contentEl.innerWidth,
-                    settings: this.settings
+                    settings: this.plugin.settings
                 }}>
-                   <StationeryComponent settings={this.settings} />
+                    <StationeryComponent settings={this.plugin.settings} onMetadataChanged={this.onMetadataChanged} />
                 </StationeryContext.Provider>
             </React.StrictMode>
         );
@@ -73,18 +87,12 @@ export class StationeryView extends ItemView {
 
     async onOpen() {
         const { contentEl } = this;
-        // contentEl.setText('Woah!');
-        // this.titleEl.setText("Obsidian Janitor")	
 
-        this.root = createRoot(contentEl/*.children[1]*/);
-        await loadMathJax();
-        await finishRenderMath();
+
+        this.root = createRoot(contentEl);
+
         this.render();
-        // const e = nerdamer('x^2+2*(cos(x)+x*x)');
-        // const latex = e.toTeX();
-        // console.log(latex);
-        // const mathEl = renderMath(latex, true);
-        // contentEl.appendChild(mathEl);
+
     }
 
     async onClose() {
@@ -94,16 +102,50 @@ export class StationeryView extends ItemView {
 }
 
 type StationeryComponentProps = {
-    settings: StationerySettings
+    settings: StationerySettings,
+    onMetadataChanged: (md:StationeryMetadata)=>void
 }
 
-const StationeryComponent = ({settings}:StationeryComponentProps) => {
+// const defaultMetadata: StationeryMetadata = {
 
-   
+// }
+
+interface ToolboxState {
+    bgColor: string
+}
+
+function stateToMetadata(state: ToolboxState):StationeryMetadata {
+    const md = {
+        background: {
+            color: state.bgColor
+        }
+    };
+    return md;
+}
+
+const StationeryComponent = ({ settings, onMetadataChanged }: StationeryComponentProps) => {
+
+    const [state, setState] = useState<ToolboxState>({
+        bgColor: "red"
+    })
+
+    const onBackgroundColorChange = useCallback((value:string)=>{
+        setState(state => {
+            const newState = {...state, bgColor:value };
+            onMetadataChanged && onMetadataChanged(stateToMetadata(newState));
+            return newState;
+        }
+            
+        )
+        
+    },[])
+
 
     return <div>
         <div>Background Color:
-            <ColorPicker color="red" />
+            <ColorPicker
+                onChange={onBackgroundColorChange}
+                color={state.bgColor} />
         </div>
     </div>
 }

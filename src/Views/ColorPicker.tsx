@@ -3,14 +3,18 @@ import * as React from "react";
 import { useEffect, useRef } from "react";
 
 
-const ColorPicker = ({color}:{color:string}) => {
+const ColorPicker = ({color,onChange}:{color:string, onChange?: (value:string)=>void}) => {
 
     const el = useRef<HTMLElement>(null);
-    console.log("rendering colorpicker")
     useEffect(()=>{
-        console.log("creating picker")
         if(el.current){
-            new ColorComponent(el.current).setValue(color);
+            new ColorComponent(el.current)
+            .setValue(color)
+            .onChange((value:string)=>{
+                onChange && onChange(value)
+            })
+            
+            ;
         }
         return ()=>{if(el.current?.firstChild) el.current.removeChild(el.current.firstChild)}
     },[])
