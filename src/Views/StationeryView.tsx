@@ -15,7 +15,7 @@ export const STATIONERY_VIEW = "Stationery-view";
 
 export const StationeryContext = React.createContext<any>({});
 
-const FRAME_MAX_SIZE = 1000;
+const FRAME_MAX_SIZE = 100;
 
 export class StationeryView extends ItemView {
     // settings: StationerySettings;
@@ -116,7 +116,9 @@ interface ToolboxState {
     bgColorSet: boolean
     opacity: number,
     opacitySet: boolean,
-    frameSize: number
+    frameSize: number,
+    frameColorSet: boolean,
+    frameColor: string
 }
 
 function stateToMetadata(state: ToolboxState):StationeryMetadata {
@@ -130,6 +132,13 @@ function stateToMetadata(state: ToolboxState):StationeryMetadata {
     if(state.opacitySet){
         md.background = {...md.background, opacity: state.opacity}
     }
+    if(state.frameSize>0){
+        md.frame = {...md.frame, size:state.frameSize};
+        if(state.frameColorSet){
+            md.frame = {...md.frame, color:state.frameColor}
+        }
+    }
+    
     return md;
 }
 
@@ -140,7 +149,9 @@ const StationeryComponent = ({ settings, onMetadataChanged }: StationeryComponen
         bgColorSet: false,
         opacity: 1.0,
         opacitySet: false,
-        frameSize: 0.0
+        frameSize: 0.0,
+        frameColorSet: false,
+        frameColor: "#66dd77"
     })
 
     const onBackgroundColorChange = useCallback((value:string)=>{
@@ -161,6 +172,14 @@ const StationeryComponent = ({ settings, onMetadataChanged }: StationeryComponen
 
     const onFrameSizeChange = useCallback((value:number)=>{
         setState(state => ({...state, frameSize:value }))    
+    },[])
+
+    const onFrameColorChange = useCallback((value:string)=>{
+        setState(state => ({...state, frameColor:value }))    
+    },[])
+
+    const onFrameColorSetChange = useCallback((e:React.ChangeEvent<HTMLInputElement>)=>{
+        setState(state => ({...state, frameColorSet:e.target.checked }))
     },[])
 
     // this is to reflect the changes on the current pages as a preview
@@ -213,6 +232,19 @@ const StationeryComponent = ({ settings, onMetadataChanged }: StationeryComponen
                 onChange={onFrameSizeChange}
                 />
             <span className="stationery-toolbox-value">{Number(state.frameSize).toLocaleString(undefined) }</span>
+        </div>
+
+        <div className="stationery-toolbox-item">
+            <label className="stationery-toolbox-label" >
+                <input className="stationery-toolbox-checkbox" type="checkbox" checked={state.frameColorSet} onChange={onFrameColorSetChange} />
+                Frame Color
+            </label>
+            
+            <ColorPicker
+                disabled={!state.frameColorSet}
+                onChange={onFrameColorChange}
+                color={state.frameColor} 
+                />
         </div>
     </div>
 }

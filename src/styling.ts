@@ -5,6 +5,7 @@ import jss from "jss";
 import pluginExpand from "jss-plugin-expand";
 import StationeryPlugin from "./main";
 
+
 const CONTENT_CLASS = "stationary-content";
 
 jss.setup({
@@ -114,11 +115,15 @@ export class StyleProcessor {
         if (st.background?.opacity) {
             content.opacity = `${st.background?.opacity}`;
         }
-        if (st.frame?.size) {
+        let frameSize = st.frame?.size;
+        if (frameSize && isFinite(frameSize as number)) {
             //TODO: support arrays
-            //and numeric
-            content.width = `calc(100% - 2*${st.frame?.size})`;
-            content.margin = `${st.frame?.size}`;
+            frameSize = `${frameSize}`
+            
+            if(!frameSize.endsWith("px")) frameSize = `${frameSize}px`;
+            
+            content.width = `calc(100% - 2*${frameSize})`;
+            content.margin = `${frameSize}`;
         }
         if (st.frame?.radius) {
             content.border = {

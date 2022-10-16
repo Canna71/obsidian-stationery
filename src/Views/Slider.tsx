@@ -22,7 +22,6 @@ const Slider = ({ value, onChange, min=0,max=100,step="any", disabled=false }: S
             .setDisabled(disabled)
             .setLimits(min, max, step)
             .onChange((value:number)=>{
-                console.log(value)
                 onChange && onChange(value)
             })
         }
