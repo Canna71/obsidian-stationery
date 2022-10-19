@@ -159,7 +159,10 @@ export class StyleProcessor {
     
         if (st.frame?.image) {
             const imgUrl = await this.processImage(st.frame?.image);
-            frame.background.image = imgUrl;
+            if(imgUrl){
+                frame.background.image = imgUrl;
+                frame.background.size = "cover";
+            }
         }
         if (st.frame?.color) {
             frame.background.color = st.frame?.color;
@@ -178,22 +181,26 @@ export class StyleProcessor {
         return style;
     }
 
-    private async processImage(imgUrl: string):Promise<string> {
-        if (!imgUrl.toUpperCase) {
-            console.log(imgUrl);
-        }
+    private async processImage(imgUrl?: string):Promise<string | undefined> {
+
+        if(!imgUrl) return undefined;
+
         if (!imgUrl.toUpperCase().startsWith("HTTP")) {
             try {
                 const imagePath = path.join(this.basePath, imgUrl);
+                
                 const image = await fs.readFile(imagePath, {
                     encoding: "base64",
                 });
                 imgUrl = "data:image/jpeg;base64," + image;
             } catch (ex) {
-                console.warn(ex);
+                if(!(ex.code === "EISDIR" || ex.code === "ENOENT")){
+                    console.warn(ex);
+                }
+                imgUrl = undefined;
             }
         }
-        imgUrl = `url(${imgUrl})`;
+        imgUrl = imgUrl && `url(${imgUrl})`;
         return imgUrl;
     }
     

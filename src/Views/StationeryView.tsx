@@ -120,7 +120,8 @@ interface ToolboxState {
     frameSize: number,
     frameColorSet: boolean,
     frameColor: string,
-    frameRadius: number
+    frameRadius: number,
+    frameImg:string
 }
 
 function stateToMetadata(state: ToolboxState):StationeryMetadata {
@@ -142,6 +143,9 @@ function stateToMetadata(state: ToolboxState):StationeryMetadata {
         if(state.frameRadius>0){
             md.frame = {...md.frame, radius: state.frameRadius}
         }
+        if(state.frameImg && state.frameImg.length){
+            md.frame = {...md.frame, image: state.frameImg }
+        }
     }
     
     return md;
@@ -157,7 +161,8 @@ const StationeryComponent = ({ settings, onMetadataChanged }: StationeryComponen
         frameSize: 0.0,
         frameColorSet: false,
         frameColor: "#66dd77",
-        frameRadius: 0.0
+        frameRadius: 0.0,
+        frameImg: ""
     })
 
     const onBackgroundColorChange = useCallback((value:string)=>{
@@ -190,6 +195,10 @@ const StationeryComponent = ({ settings, onMetadataChanged }: StationeryComponen
 
     const onFrameRadiusChange = useCallback((value:number)=>{
         setState(state => ({...state, frameRadius:value }))    
+    },[])
+
+    const onFrameImgChange = useCallback((e:React.ChangeEvent<HTMLInputElement>)=>{
+        setState(state => ({...state, frameImg:e.target.value }))    
     },[])
 
     // this is to reflect the changes on the current pages as a preview
@@ -271,6 +280,15 @@ const StationeryComponent = ({ settings, onMetadataChanged }: StationeryComponen
                 onChange={onFrameColorChange}
                 color={state.frameColor} 
                 />
+        </div>
+        <div className="stationery-toolbox-item">
+            <label className="stationery-toolbox-label" >
+                Frame Image
+            </label>
+            <input className="stationery-toolbox-text" type="text" value={state.frameImg}
+                onChange={onFrameImgChange}
+            />
+            
         </div>
     </div>
 }
