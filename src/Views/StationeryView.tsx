@@ -11,6 +11,7 @@ import ColorPicker from "./ColorPicker";
 import { useCallback, useEffect, useState } from "react";
 import { StationeryMetadata } from "src/styling";
 import Slider from "./Slider";
+import { SelectObs } from "./Select";
 export const STATIONERY_VIEW = "Stationery-view";
 
 export const StationeryContext = React.createContext<any>({});
@@ -121,7 +122,8 @@ interface ToolboxState {
     frameColorSet: boolean,
     frameColor: string,
     frameRadius: number,
-    frameImg:string
+    frameImg:string,
+    templateName: string
 }
 
 function stateToMetadata(state: ToolboxState):StationeryMetadata {
@@ -162,7 +164,8 @@ const StationeryComponent = ({ settings, onMetadataChanged }: StationeryComponen
         frameColorSet: false,
         frameColor: "#66dd77",
         frameRadius: 0.0,
-        frameImg: ""
+        frameImg: "",
+        templateName: ""
     })
 
     const onBackgroundColorChange = useCallback((value:string)=>{
@@ -205,6 +208,8 @@ const StationeryComponent = ({ settings, onMetadataChanged }: StationeryComponen
     useEffect(()=>{
         onMetadataChanged && onMetadataChanged(stateToMetadata(state));
     },[state])
+
+    const templateNames = settings.templates.map(t=>({label: t.name,value: t.name}));
 
     return <div className="stationery-toolbox">
         <div className="stationery-toolbox-item">
@@ -287,6 +292,16 @@ const StationeryComponent = ({ settings, onMetadataChanged }: StationeryComponen
             </label>
             <input className="stationery-toolbox-text" type="text" value={state.frameImg}
                 onChange={onFrameImgChange}
+            />
+            
+        </div>
+        <div className="stationery-toolbox-item">
+            <label className="stationery-toolbox-label" >
+                Template
+            </label>
+            
+            <SelectObs options={templateNames} 
+            value={state.templateName}
             />
             
         </div>
