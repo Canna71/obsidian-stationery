@@ -41,7 +41,11 @@ export interface StationeryStyle {
             image?: string,
             color?: string
         }
+    },
+    header: {
+        margin: number
     }
+
 }
 
 export class StyleProcessor {
@@ -81,7 +85,7 @@ export class StyleProcessor {
         this.applyStyleInternal(mv, style);
     }
 
-    private applyStyleInternal( mv: MarkdownView, style: { content: any; frame: any; }) {
+    private applyStyleInternal( mv: MarkdownView, style: { content: any; frame: any; header: any;}) {
         this.removeStyle(mv);
         const sheet = jss.createStyleSheet(style);
         // (mv as any)._sheets = sheet;
@@ -90,6 +94,7 @@ export class StyleProcessor {
         sheet.attach();
         mv.contentEl.addClasses([CONTENT_CLASS, sheet.classes.content]);
         mv.contentEl.parentElement?.addClass(sheet.classes.frame);
+        mv.contentEl.parentElement?.firstElementChild?.addClass(sheet.classes.header);
     }
 
     private removeStyle(mv: MarkdownView) {
@@ -98,6 +103,7 @@ export class StyleProcessor {
             sheets.forEach((sheet:any)=>{
                 mv.contentEl.removeClasses([CONTENT_CLASS, sheet.classes.content]);
                 mv.contentEl.parentElement?.removeClasses([sheet.classes.frame]);
+                mv.contentEl.parentElement?.firstElementChild?.removeClasses([sheet.classes.header]);
                 jss.removeStyleSheet(sheet);
             });
             (mv as any)._sheets = undefined;  
@@ -123,11 +129,17 @@ export class StyleProcessor {
             if(!frameSize.endsWith("px")) frameSize = `${frameSize}px`;
             
             content.width = `calc(100% - 2*${frameSize})`;
+            content.height = `calc(100% - 2*${frameSize} - var(--header-height)) !important`;
+
             content.margin = `${frameSize}`;
         }
-        if (st.frame?.radius) {
+        let frameRadius = st.frame?.radius;
+        if (frameRadius && isFinite(frameRadius as number)) {
+
+            frameRadius = `${frameRadius}`;
+            if(!frameRadius.endsWith("px")) frameRadius = `${frameRadius}px`;
             content.border = {
-                radius: st.frame?.radius,
+                radius: frameRadius,
             };
         }
     
@@ -152,11 +164,16 @@ export class StyleProcessor {
         if (st.frame?.color) {
             frame.background.color = st.frame?.color;
         }
+
+        const header = {
+            margin: 0
+        }
     
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const style = {
             content,
             frame,
+            header
         };
         return style;
     }

@@ -16,6 +16,7 @@ export const STATIONERY_VIEW = "Stationery-view";
 export const StationeryContext = React.createContext<any>({});
 
 const FRAME_MAX_SIZE = 100;
+const FRAME_MAX_RADIUS = 50;
 
 export class StationeryView extends ItemView {
     // settings: StationerySettings;
@@ -118,7 +119,8 @@ interface ToolboxState {
     opacitySet: boolean,
     frameSize: number,
     frameColorSet: boolean,
-    frameColor: string
+    frameColor: string,
+    frameRadius: number
 }
 
 function stateToMetadata(state: ToolboxState):StationeryMetadata {
@@ -137,6 +139,9 @@ function stateToMetadata(state: ToolboxState):StationeryMetadata {
         if(state.frameColorSet){
             md.frame = {...md.frame, color:state.frameColor}
         }
+        if(state.frameRadius>0){
+            md.frame = {...md.frame, radius: state.frameRadius}
+        }
     }
     
     return md;
@@ -151,7 +156,8 @@ const StationeryComponent = ({ settings, onMetadataChanged }: StationeryComponen
         opacitySet: false,
         frameSize: 0.0,
         frameColorSet: false,
-        frameColor: "#66dd77"
+        frameColor: "#66dd77",
+        frameRadius: 0.0
     })
 
     const onBackgroundColorChange = useCallback((value:string)=>{
@@ -180,6 +186,10 @@ const StationeryComponent = ({ settings, onMetadataChanged }: StationeryComponen
 
     const onFrameColorSetChange = useCallback((e:React.ChangeEvent<HTMLInputElement>)=>{
         setState(state => ({...state, frameColorSet:e.target.checked }))
+    },[])
+
+    const onFrameRadiusChange = useCallback((value:number)=>{
+        setState(state => ({...state, frameRadius:value }))    
     },[])
 
     // this is to reflect the changes on the current pages as a preview
@@ -232,6 +242,22 @@ const StationeryComponent = ({ settings, onMetadataChanged }: StationeryComponen
                 onChange={onFrameSizeChange}
                 />
             <span className="stationery-toolbox-value">{Number(state.frameSize).toLocaleString(undefined) }</span>
+        </div>
+
+        <div className="stationery-toolbox-item">
+            <label className="stationery-toolbox-label" >
+                Frame Radius
+            </label>
+            
+            <Slider
+                value={state.frameRadius}
+                disabled={state.frameSize<1}
+                min={0}
+                max={FRAME_MAX_RADIUS}
+                step={1}
+                onChange={onFrameRadiusChange}
+                />
+            <span className="stationery-toolbox-value">{Number(state.frameRadius).toLocaleString(undefined) }</span>
         </div>
 
         <div className="stationery-toolbox-item">
